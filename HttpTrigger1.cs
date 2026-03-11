@@ -1,23 +1,50 @@
-using Microsoft.AspNetCore.Http;
-using Microsoft.AspNetCore.Mvc;
+using System;
+using System.IO;
+using System.Text.Json;
+using System.Net;
 using Microsoft.Azure.Functions.Worker;
+using Microsoft.Azure.Functions.Worker.Http;
 using Microsoft.Extensions.Logging;
-
-namespace Insert.Function;
+using Microsoft.Data.SqlClient;
 
 public class HttpTrigger1
 {
-    private readonly ILogger<HttpTrigger1> _logger;
+    private readonly ILogger _logger;
 
-    public HttpTrigger1(ILogger<HttpTrigger1> logger)
+    public HttpTrigger1(ILoggerFactory loggerFactory)
     {
-        _logger = logger;
+        _logger = loggerFactory.CreateLogger<HttpTrigger1>();
     }
 
-    [Function("HttpTrigger1")]
-    public IActionResult Run([HttpTrigger(AuthorizationLevel.Function, "get", "post")] HttpRequest req)
+    [Function("insert-reading")]
+    public async Task<HttpResponseData> Run(
+        [HttpTrigger(AuthorizationLevel.Anonymous, "post")] HttpRequestData req)
     {
-        _logger.LogInformation("C# HTTP trigger function processed a request.");
-        return new OkObjectResult("Welcome to Azure Functions!");
+        _logger.LogInformation("Processing request.");
+
+        var body = await new StreamReader(req.Body).ReadToEndAsync();
+        var data = JsonSerializer.Deserialize<JsonElement>(body);
+
+        double voltage = data.GetProperty("voltage").GetDouble();
+        int error = data.GetProperty("error").GetInt32();
+
+        string connString = Environment.GetEnvironmentVariable("SQL_CONNECTION_STRING");
+
+        using SqlConnection conn = new SqlConnection(connString);
+        await conn.OpenAsync();
+
+        string query = "INSERT INTO Readings (ReadingTime, ReadingVoltage, ReadingError) VALUES (@time,@voltage,@error)";
+        using SqlCommand cmd = new SqlCommand(query, conn);
+
+        cmd.Parameters.AddWithValue("@time", DateTime.UtcNow);
+        cmd.Parameters.AddWithValue("@voltage", voltage);
+        cmd.Parameters.AddWithValue("@error", error);
+
+        await cmd.ExecuteNonQueryAsync();
+
+        var response = req.CreateResponse(HttpStatusCode.OK);
+        await response.WriteStringAsync("Inserted successfully");
+
+        return response;
     }
 }
