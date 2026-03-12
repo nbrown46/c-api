@@ -34,9 +34,11 @@ public class HttpTrigger1
         await conn.OpenAsync();
 
         string query = "INSERT INTO Readings (ReadingTime, ReadingVoltage, ReadingError) VALUES (@time,@voltage,@error)";
-        using SqlCommand cmd = new SqlCommand(query, conn);
+        using SqlCommand cmd = new SqlCommand("AddReading", conn);
+        cmd.CommandType = System.Data.CommandType.StoredProcedure;
 
-        cmd.Parameters.AddWithValue("@time", DateTime.UtcNow);
+        cmd.Parameters.AddWithValue("@uId", 101)
+        //cmd.Parameters.AddWithValue("@time", DateTime.UtcNow);
         cmd.Parameters.AddWithValue("@voltage", voltage);
         cmd.Parameters.AddWithValue("@error", error);
 
