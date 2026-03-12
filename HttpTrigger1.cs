@@ -37,7 +37,7 @@ public class HttpTrigger1
         using SqlCommand cmd = new SqlCommand("AddReading", conn);
         cmd.CommandType = System.Data.CommandType.StoredProcedure;
 
-        cmd.Parameters.AddWithValue("@uId", 101)
+        cmd.Parameters.AddWithValue("@uId", 101);
         //cmd.Parameters.AddWithValue("@time", DateTime.UtcNow);
         cmd.Parameters.AddWithValue("@voltage", voltage);
         cmd.Parameters.AddWithValue("@error", error);
