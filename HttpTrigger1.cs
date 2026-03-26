@@ -39,7 +39,11 @@ public class HttpTrigger1
 
         cmd.Parameters.AddWithValue("@uId", 101);
         //cmd.Parameters.AddWithValue("@time", DateTime.UtcNow);
-        cmd.Parameters.AddWithValue("@voltage", voltage);
+        //cmd.Parameters.AddWithValue("@voltage", voltage);
+        var voltageParam = cmd.Parameters.Add("@voltage", System.Data.SqlDbType.Decimal);
+        voltageParam.Precision = 10;
+        voltageParam.Scale = 6;
+        voltageParam.Value = voltage;
         cmd.Parameters.AddWithValue("@error", error);
 
         await cmd.ExecuteNonQueryAsync();
